@@ -1,0 +1,33 @@
+{
+  "_doc": "Zoning splines in lat/lon. Open splines are buffered by width_m; closed splines are smooth area boundaries. Higher priority wins where zones overlap. Approximate, for prototyping only; not official SF zoning.",
+  "zones": [
+    {
+      "name": "Fillmore St corridor",
+      "type": "neighborhood_commercial",
+      "priority": 3,
+      "width_m": 70,
+      "points": [[37.7866, -122.43252], [37.7848, -122.43248], [37.7830, -122.43254], [37.7810, -122.43246]]
+    },
+    {
+      "name": "Geary Blvd corridor",
+      "type": "residential_mixed",
+      "priority": 2,
+      "width_m": 80,
+      "points": [[37.78425, -122.4420], [37.78418, -122.4360], [37.78424, -122.4300], [37.78420, -122.4255]]
+    },
+    {
+      "name": "Japantown edge",
+      "type": "civic",
+      "priority": 2,
+      "closed": true,
+      "points": [[37.7858, -122.4300], [37.7858, -122.4268], [37.7846, -122.4264], [37.7845, -122.4298]]
+    },
+    {
+      "name": "Neighborhood residential",
+      "type": "residential_house",
+      "priority": 0,
+      "closed": true,
+      "points": [[37.7870, -122.4425], [37.7870, -122.4250], [37.7798, -122.4250], [37.7798, -122.4425]]
+    }
+  ]
+}
