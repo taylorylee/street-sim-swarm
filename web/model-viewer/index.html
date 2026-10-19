@@ -1,0 +1,50 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Block Twin Viewer</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#EFECE4;--ink:#2a2a1c;--mute:#7a7566;--accent:#4A4A10;--card:#fbfaf6;--line:#e2ddd1}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--card:#fbfaf6}}
+:root[data-theme="dark"]{--card:#fbfaf6}
+*{box-sizing:border-box}html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:14px Inter,system-ui,sans-serif;overflow:hidden}
+#c{position:fixed;inset:0;width:100%;height:100%;display:block}
+.bar{position:fixed;top:16px;left:50%;transform:translateX(-50%);width:min(620px,calc(100% - 32px));display:flex;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:99px;padding:6px 6px 6px 20px;box-shadow:0 6px 24px rgba(60,55,40,.08)}
+.bar input{flex:1;border:0;background:transparent;font:16px Inter;color:var(--ink);outline:none;min-width:0}
+.bar button{background:var(--accent);color:#f4f1e6;border:0;border-radius:99px;padding:10px 20px;font:600 15px Inter;cursor:pointer}
+.info{position:fixed;left:16px;bottom:16px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:12px;color:var(--mute);max-width:320px}
+.info b{color:var(--ink)}
+.ctl{position:fixed;right:16px;bottom:16px;display:flex;gap:6px}
+.ctl button{background:var(--card);border:1px solid var(--line);border-radius:99px;padding:7px 12px;font:500 12px Inter;color:var(--ink);cursor:pointer}
+.ctl button.on{background:var(--accent);color:#f4f1e6;border-color:var(--accent)}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+</head><body>
+<canvas id="c"></canvas>
+<div class="bar"><input placeholder="Search a place, like Chinatown San Francisco" value="Fillmore & O'Farrell, San Francisco"><button>Simulate</button></div>
+<div class="info"><b>Procedural preview</b> · 1,540 buildings from the Python generator . Drag to orbit, scroll to zoom.</div>
+<div class="ctl"><button id="spin" class="on">Auto-rotate</button><button id="top">Top view</button><button id="axo">Axonometric</button></div>
+<script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+const cv=document.getElementById('c');
+const R=new THREE.WebGLRenderer({canvas:cv,antialias:true});R.setPixelRatio(Math.min(2,devicePixelRatio));
+R.outputColorSpace=THREE.LinearSRGBColorSpace; // colors are baked sRGB bytes; pass straight through
+const scene=new THREE.Scene();scene.background=new THREE.Color().setRGB(0xEF/255,0xEC/255,0xE4/255,THREE.LinearSRGBColorSpace);
+const cam=new THREE.PerspectiveCamera(28,1,1,20000);
+const ctl=new OrbitControls(cam,cv);ctl.enableDamping=true;ctl.autoRotate=true;ctl.autoRotateSpeed=.6;ctl.maxPolarAngle=Math.PI*.47;
+function size(){const w=innerWidth,h=innerHeight;R.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix()}
+addEventListener('resize',size);size();
+new GLTFLoader().load(new URLSearchParams(location.search).get('model')||'../../out/fillmore.glb',g=>{
+  const root=g.scene;root.rotation.x=-Math.PI/2; // z-up -> y-up
+  root.traverse(o=>{if(o.isMesh){o.material=new THREE.MeshBasicMaterial({vertexColors:true})}});
+  scene.add(root);
+  const box=new THREE.Box3().setFromObject(root),c=box.getCenter(new THREE.Vector3()),s=box.getSize(new THREE.Vector3());
+  root.position.sub(c);ctl.target.set(0,0,0);
+  const d=Math.max(s.x,s.z);window._d=d;axo();
+});
+function axo(){const d=window._d||1000;cam.position.set(d*.55,d*.6,d*.75);ctl.update()}
+function top(){const d=window._d||1000;cam.position.set(0,d*1.6,0.01);ctl.update()}
+document.getElementById('axo').onclick=axo;document.getElementById('top').onclick=top;
+const sp=document.getElementById('spin');sp.onclick=()=>{ctl.autoRotate=!ctl.autoRotate;sp.classList.toggle('on',ctl.autoRotate)};
+(function loop(){ctl.update();R.render(scene,cam);requestAnimationFrame(loop)})();
+</script></body></html>

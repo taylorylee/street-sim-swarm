@@ -1,0 +1,172 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fillmore Place Twin</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Fraunces:opsz,wght@9..144,600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#EFECE4;--card:rgba(251,250,246,.94);--ink:#2a2a1c;--mute:#7a7566;--accent:#4A4A10;--olive:#8a9a3a;--line:#e2ddd1;--plum:#7E5A86}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#EFECE4}}
+:root[data-theme="dark"]{--bg:#EFECE4}
+*{box-sizing:border-box}html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:13px/1.45 Inter,system-ui,sans-serif;overflow:hidden}
+#c{position:fixed;inset:0;width:100%;height:100%;display:block}
+.bar{position:fixed;top:14px;left:50%;transform:translateX(-50%);width:min(560px,calc(100% - 32px));display:flex;gap:8px;background:#fbfaf6;border:1px solid var(--line);border-radius:99px;padding:5px 5px 5px 18px;box-shadow:0 6px 24px rgba(60,55,40,.08);z-index:3}
+.bar input{flex:1;border:0;background:transparent;font:15px Inter;color:var(--ink);outline:none;min-width:0}
+.bar button{background:var(--accent);color:#f4f1e6;border:0;border-radius:99px;padding:9px 18px;font:600 14px Inter;cursor:pointer}
+.panel{position:fixed;left:14px;top:76px;width:300px;max-height:calc(100% - 170px);overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;z-index:2;backdrop-filter:blur(8px)}
+.eyebrow{font:600 10px Inter;letter-spacing:.09em;text-transform:uppercase;color:var(--mute)}
+h1{font:600 19px/1.15 Fraunces,serif;margin:4px 0 4px}
+.sub{color:var(--mute);font-size:12px;margin:0 0 10px}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:8px 0}
+.k{border:1px solid var(--line);border-radius:10px;padding:7px 9px;background:#fff}
+.k .n{font:600 20px Fraunces,serif;color:var(--accent)}.k .l{font-size:10.5px;color:var(--mute)}
+canvas.ch{width:100%;height:96px;display:block}
+.leg{display:flex;gap:10px;font-size:11px;color:var(--mute);margin-top:3px}.sw{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+.src{font-size:10.5px;color:var(--mute);margin-top:10px;border-top:1px solid var(--line);padding-top:8px}
+.tag{display:inline-block;font:600 9.5px Inter;padding:1px 6px;border-radius:99px;margin-right:3px}
+.t-real{background:#e7ead4;color:#4A4A10}.t-est{background:#efe6d6;color:#7a5a2a}
+.dock{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);width:min(760px,calc(100% - 28px));background:var(--card);border:1px solid var(--line);border-radius:16px;padding:10px 14px;z-index:2;display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;backdrop-filter:blur(8px)}
+.seg{display:flex;gap:4px}.seg button{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:99px;padding:5px 11px;font:500 12px Inter;cursor:pointer}
+.seg button.on{background:var(--accent);color:#f4f1e6;border-color:var(--accent)}
+.time{flex:1;min-width:200px;display:flex;align-items:center;gap:8px;font:600 12px Inter}
+.time input{flex:1;accent-color:#4A4A10}
+#play{border:1px solid var(--line);background:#fff;border-radius:99px;width:30px;height:30px;cursor:pointer;color:var(--ink)}
+@media(max-width:760px){.panel{top:auto;bottom:150px;width:calc(100% - 28px);max-height:38%}}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+</head><body>
+<canvas id="c"></canvas>
+<div class="bar"><input value="O'Farrell St, Fillmore to Steiner, San Francisco"><button>Simulate</button></div>
+<div class="panel">
+<div class="eyebrow">Gatherground · Block Impact</div>
+<h1>Fillmore Farmers Market block</h1>
+<p class="sub">O'Farrell between Fillmore and Steiner · busiest permitted event block in SF (64 market days)</p>
+<div class="kpis">
+<div class="k"><div class="n" id="kNow">0</div><div class="l">people on block now</div></div>
+<div class="k"><div class="n" id="kLift">–</div><div class="l">vs. normal Saturday, this hour</div></div>
+<div class="k"><div class="n" id="kPeak">–</div><div class="l">market-hours lift</div></div>
+<div class="k"><div class="n" id="kSpill">–</div><div class="l">nearby buildings with +20% traffic</div></div>
+</div>
+<canvas class="ch" id="ch"></canvas>
+<div class="leg"><span><i class="sw" style="background:#4A4A10"></i>Market day</span><span><i class="sw" style="background:#b8b19e"></i>Normal Saturday</span></div>
+<div class="src">
+<span class="tag t-real">real</span>Buildings: OpenStreetMap · Zoning: DataSF 3i4a-hu95 · Event days: SFMTA permits<br>
+<span class="tag t-est">estimated</span>Foot traffic from a 1,500-agent cohort model (gravity + street routing). Not yet calibrated with counts. Grey-olive buildings are procedural infill, not real.
+</div>
+</div>
+<div class="dock">
+<div class="seg" id="scen"><button data-v="event" class="on">Market day</button><button data-v="normal">Normal Saturday</button></div>
+<div class="time"><button id="play">❚❚</button><span id="clock">09:00</span><input id="t" type="range" min="360" max="1380" value="540"></div>
+<div class="seg" id="layer"><button data-v="traffic" class="on">Traffic</button><button data-v="spill">Spillover</button><button data-v="source">Data source</button></div>
+</div>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+const D=await fetch(new URLSearchParams(location.search).get('city')||'city.json').then(r=>r.json());
+// ---------- renderer ----------
+const cv=document.getElementById('c');const R=new THREE.WebGLRenderer({canvas:cv,antialias:true});R.setPixelRatio(Math.min(2,devicePixelRatio));
+const scene=new THREE.Scene();scene.background=new THREE.Color('#EFECE4');
+const cam=new THREE.PerspectiveCamera(30,1,1,20000);const ctl=new OrbitControls(cam,cv);ctl.enableDamping=true;ctl.maxPolarAngle=Math.PI*.46;
+scene.add(new THREE.HemisphereLight(0xffffff,0xd8d2c4,1.9));const sun=new THREE.DirectionalLight(0xffffff,1.6);sun.position.set(-300,500,250);scene.add(sun);
+function size(){R.setSize(innerWidth,innerHeight,false);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix()}addEventListener('resize',size);size();
+const V=(x,y)=>new THREE.Vector3(x,0,-y);
+// ---------- ground ----------
+let minx=1e9,maxx=-1e9,miny=1e9,maxy=-1e9;D.roads.forEach(r=>r.c.forEach(([x,y])=>{minx=Math.min(minx,x);maxx=Math.max(maxx,x);miny=Math.min(miny,y);maxy=Math.max(maxy,y)}));
+const cx0=(minx+maxx)/2,cy0=(miny+maxy)/2,span=Math.max(maxx-minx,maxy-miny);
+const g=new THREE.Mesh(new THREE.PlaneGeometry(span*3,span*3),new THREE.MeshLambertMaterial({color:'#EFECE4'}));g.rotation.x=-Math.PI/2;g.position.set(cx0,-0.2,-cy0);scene.add(g);
+// parks
+const parkMat=new THREE.MeshLambertMaterial({color:'#DCE6B4'});
+D.parks.forEach(p=>{const s=new THREE.Shape(p.map(([x,y])=>new THREE.Vector2(x,y)));const m=new THREE.Mesh(new THREE.ShapeGeometry(s),parkMat);m.rotation.x=-Math.PI/2;m.position.y=0.08;scene.add(m)});
+// ---------- road graph ----------
+const nodes=[],key={},edges=[];const nid=(x,y)=>{const k=Math.round(x*2)+','+Math.round(y*2);if(key[k]===undefined){key[k]=nodes.length;nodes.push({x,y,nb:[]})}return key[k]};
+D.roads.forEach(r=>{for(let i=0;i<r.c.length-1;i++){const a=nid(...r.c[i]),b=nid(...r.c[i+1]);if(a===b)continue;const e={a,b,n:r.n,load:0,i:edges.length};edges.push(e);nodes[a].nb.push([b,e]);nodes[b].nb.push([a,e])}});
+// event segment geometry
+const [E1,E2]=D.event;const segDist=(px,py,ax,ay,bx,by)=>{const dx=bx-ax,dy=by-ay,t=Math.max(0,Math.min(1,((px-ax)*dx+(py-ay)*dy)/(dx*dx+dy*dy)));return Math.hypot(px-ax-t*dx,py-ay-t*dy)};
+const nearEvent=(x,y)=>segDist(x,y,E1[0],E1[1],E2[0],E2[1]);
+edges.forEach(e=>{const A=nodes[e.a],B=nodes[e.b];e.mx=(A.x+B.x)/2;e.my=(A.y+B.y)/2;e.ev=nearEvent(e.mx,e.my)<12&&e.n===(D.event_street||e.n)});
+const EV_NODES=nodes.map((n,i)=>[i,nearEvent(n.x,n.y)]).filter(([,d])=>d<20).map(([i])=>i);
+// road ribbons
+const rp=[],rc=[];const roadBase=new THREE.Color('#E2DCCD');
+edges.forEach(e=>{const A=nodes[e.a],B=nodes[e.b];let dx=B.x-A.x,dy=B.y-A.y;const L=Math.hypot(dx,dy)||1;const w=/Boulevard|Geary/.test(e.n)?9:5;const nx=-dy/L*w,ny=dx/L*w;
+ const q=[[A.x+nx,A.y+ny],[B.x+nx,B.y+ny],[B.x-nx,B.y-ny],[A.x-nx,A.y-ny]];[[0,1,2],[0,2,3]].forEach(t=>t.forEach(k=>{rp.push(q[k][0],0.05,-q[k][1]);rc.push(roadBase.r,roadBase.g,roadBase.b)}))});
+const rg=new THREE.BufferGeometry();rg.setAttribute('position',new THREE.Float32BufferAttribute(rp,3));rg.setAttribute('color',new THREE.Float32BufferAttribute(rc,3));
+scene.add(new THREE.Mesh(rg,new THREE.MeshBasicMaterial({vertexColors:true,side:THREE.DoubleSide})));
+// event marker
+const evLine=new THREE.Mesh(new THREE.BoxGeometry(Math.hypot(E2[0]-E1[0],E2[1]-E1[1]),0.6,16),new THREE.MeshBasicMaterial({color:'#4A4A10',transparent:true,opacity:.0}));
+evLine.position.set((E1[0]+E2[0])/2,0.3,-(E1[1]+E2[1])/2);evLine.rotation.y=Math.atan2(E2[1]-E1[1],E2[0]-E1[0]);scene.add(evLine);
+const pin=new THREE.Mesh(new THREE.SphereGeometry(7,20,12,0,Math.PI*2,0,Math.PI/2),new THREE.MeshLambertMaterial({color:'#7E5A86'}));pin.position.set((E1[0]+E2[0])/2,22,-(E1[1]+E2[1])/2);scene.add(pin);
+// ---------- buildings (merged, recolorable) ----------
+const geos=[],ranges=[];let vtx=0;
+D.buildings.forEach((b,i)=>{if(b.p.length<3)return;const s=new THREE.Shape(b.p.map(([x,y])=>new THREE.Vector2(x,y)));let geo;try{geo=new THREE.ExtrudeGeometry(s,{depth:Math.max(b.h,2),bevelEnabled:false})}catch(e){return}
+ geo.rotateX(-Math.PI/2);geo=geo.toNonIndexed();const n=geo.attributes.position.count;geo.setAttribute('color',new THREE.Float32BufferAttribute(new Float32Array(n*3).fill(1),3));
+ let sx=0,sy=0;b.p.forEach(([x,y])=>{sx+=x;sy+=y});ranges.push({start:vtx,count:n,b,cx:sx/b.p.length,cy:sy/b.p.length});vtx+=n;geos.push(geo)});
+const bgeo=mergeGeometries(geos);const bmesh=new THREE.Mesh(bgeo,new THREE.MeshLambertMaterial({vertexColors:true}));scene.add(bmesh);
+const bcol=bgeo.attributes.color;
+// nearest edge for each building
+ranges.forEach(r=>{let best=1e9,be=null;for(const e of edges){const d=Math.hypot(e.mx-r.cx,e.my-r.cy);if(d<best){best=d;be=e}}r.edge=best<45?be:null});
+// ---------- agents ----------
+const N=1500;let seed=20261019;const rnd=()=>(seed=(seed*1664525+1013904223)>>>0)/4294967296;
+const ATTR=[];nodes.forEach((n,i)=>{for(const[,e]of n.nb){if(e.n==='Fillmore Street'){ATTR.push([i,3]);break}if(/Geary/.test(e.n)){ATTR.push([i,1.2]);break}}});
+function mkAgents(){seed=20261019;return Array.from({length:N},()=>{const n=Math.floor(rnd()*nodes.length);return{from:n,to:n,goal:n,p:1,sp:1.1+rnd()*.6,dwell:rnd()*60,act:rnd(),e:null,jit:(rnd()-.5)*6}})}
+const activity=m=>{const h=m/60;return Math.max(.08,Math.exp(-((h-13)**2)/18)*.85+Math.exp(-((h-19.5)**2)/5)*.35)};
+const evOn=(sc,m)=>sc==='event'&&m>=540&&m<=780;
+function pick(a,sc,m){if(rnd()<.2)return Math.floor(rnd()*nodes.length);const A=nodes[a.from];let list=ATTR;if(evOn(sc,m))list=ATTR.concat(EV_NODES.map(i=>[i,6]));
+ let tot=0;const w=list.map(([n,wt])=>{const B=nodes[n];const d=Math.hypot(A.x-B.x,A.y-B.y)/60+1;const v=wt/(d*d);tot+=v;return v});let r=rnd()*tot;for(let i=0;i<list.length;i++){if((r-=w[i])<=0)return list[i][0]}return list[0][0]}
+function step(ag,sc,m,dt,acc){const act=activity(m);
+ for(const a of ag){a.on=a.act<act;if(!a.on)continue;
+  if(a.p>=1){a.from=a.to;if(a.from===a.goal){if((a.dwell-=dt)>0)continue;a.goal=pick(a,sc,m);a.dwell=8+rnd()*(evOn(sc,m)&&EV_NODES.includes(a.goal)?60:30)}
+   const G=nodes[a.goal],A=nodes[a.from];let best=null,bd=1e9;for(const[n,e]of A.nb){const B=nodes[n];const d=Math.hypot(B.x-G.x,B.y-G.y)+rnd()*40;if(d<bd){bd=d;best=[n,e]}}
+   if(!best){a.goal=a.from;continue}a.to=best[0];a.e=best[1];a.p=0;a.len=Math.max(5,Math.hypot(nodes[a.to].x-A.x,nodes[a.to].y-A.y))}
+  a.p+=a.sp*dt*60/a.len;if(acc&&a.e)acc[a.e.i]+=dt}}
+const onBlock=ag=>ag.reduce((c,a)=>c+(a.on&&a.e&&a.e.ev?1:0),0);
+// offline runs -> hourly curves + per-edge market-hours exposure
+function offline(sc){const ag=mkAgents(),curve=new Float32Array(1440),acc=new Float32Array(edges.length);
+ for(let m=360;m<1380;m++){step(ag,sc,m,1,m>=540&&m<=780?acc:null);curve[m]=onBlock(ag)}
+ const sm=new Float32Array(1440);for(let m=360;m<1380;m++){let s=0,k=0;for(let d=-15;d<=15;d++){if(m+d>=360&&m+d<1380){s+=curve[m+d];k++}}sm[m]=s/k}return{curve:sm,acc}}
+const RUN={event:offline('event'),normal:offline('normal')};
+const lift=ranges.map(r=>r.edge?(RUN.event.acc[r.edge.i]+1)/(RUN.normal.acc[r.edge.i]+1):1);
+let peakE=0,peakN=0;for(let m=540;m<=780;m++){peakE+=RUN.event.curve[m];peakN+=RUN.normal.curve[m]}
+document.getElementById('kPeak').textContent='+'+Math.round((peakE/peakN-1)*100)+'%';
+document.getElementById('kSpill').textContent=lift.filter(l=>l>1.2).length;
+// live agents
+let scen='event',minute=540,playing=true,layer='traffic';let ag=mkAgents();
+const pg=new THREE.BufferGeometry();const ppos=new Float32Array(N*3);pg.setAttribute('position',new THREE.BufferAttribute(ppos,3));
+const pts=new THREE.Points(pg,new THREE.PointsMaterial({color:'#4A4A10',size:3.2,sizeAttenuation:true}));scene.add(pts);
+const liveAcc=new Float32Array(edges.length);
+// ---------- coloring ----------
+const C=s=>new THREE.Color(s);const WHITE=C('#FBFAF6'),EST=C('#EBDDC4'),PROC=C('#D9DCC6'),SPILL_LO=C('#FBFAF6'),SPILL_HI=C('#9AAE45'),EVB=C('#C9D88A');
+function paintBuildings(){const tmp=new THREE.Color();
+ ranges.forEach((r,i)=>{let col=WHITE;
+  if(layer==='source')col=r.b.s==='o'?WHITE:r.b.s==='z'?EST:PROC;
+  else if(layer==='spill'){const l=scen==='event'?Math.min(1,Math.max(0,(lift[i]-1)/1.2)):0;col=tmp.copy(SPILL_LO).lerp(SPILL_HI,l)}
+  else{col=r.b.s==='p'?PROC:WHITE}
+  for(let k=r.start;k<r.start+r.count;k++)bcol.setXYZ(k,col.r,col.g,col.b)});bcol.needsUpdate=true}
+paintBuildings();
+const rcol=rg.attributes.color;const LOAD=C('#5E6B2A'),tmpc=new THREE.Color();
+function paintRoads(){const show=layer==='traffic';edges.forEach((e,i)=>{const l=show?Math.min(1,liveAcc[i]/2.2):0;let c=tmpc.copy(roadBase).lerp(LOAD,l*.9);if(e.ev&&evOn(scen,minute))c=tmpc.copy(EVB);for(let k=0;k<6;k++)rcol.setXYZ(i*6+k,c.r,c.g,c.b)});rcol.needsUpdate=true}
+// ---------- chart ----------
+const ch=document.getElementById('ch'),cc=ch.getContext('2d');
+function chart(){const r=ch.getBoundingClientRect(),dpr=Math.min(2,devicePixelRatio);ch.width=r.width*dpr;ch.height=r.height*dpr;cc.setTransform(dpr,0,0,dpr,0,0);const w=r.width,h=r.height;cc.clearRect(0,0,w,h);
+ const mx=Math.max(...RUN.event.curve.slice(360,1380))||1;cc.fillStyle='rgba(74,74,16,.07)';cc.fillRect((540-360)/1020*w,0,(240)/1020*w,h-12);
+ const line=(arr,col,lw)=>{cc.strokeStyle=col;cc.lineWidth=lw;cc.beginPath();for(let m=360;m<1380;m+=5){const x=(m-360)/1020*w,y=h-14-arr[m]/mx*(h-22);m===360?cc.moveTo(x,y):cc.lineTo(x,y)}cc.stroke()};
+ line(RUN.normal.curve,'#b8b19e',1.5);line(RUN.event.curve,'#4A4A10',2.2);
+ const x=(minute-360)/1020*w;cc.strokeStyle='#7E5A86';cc.lineWidth=1;cc.beginPath();cc.moveTo(x,0);cc.lineTo(x,h-12);cc.stroke();
+ cc.fillStyle='#7a7566';cc.font='10px Inter';cc.fillText('6a',0,h-1);cc.fillText('9a market',(540-360)/1020*w+2,h-1);cc.fillText('11p',w-16,h-1)}
+// ---------- UI ----------
+const fmt=m=>String(Math.floor(m/60)).padStart(2,'0')+':'+String(Math.floor(m%60)).padStart(2,'0');
+const seg=(id,fn)=>document.querySelectorAll('#'+id+' button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#'+id+' button').forEach(x=>x.classList.remove('on'));b.classList.add('on');fn(b.dataset.v)});
+seg('scen',v=>{scen=v;paintBuildings()});seg('layer',v=>{layer=v;paintBuildings()});
+const tR=document.getElementById('t');tR.oninput=()=>minute=+tR.value;
+const pb=document.getElementById('play');pb.onclick=()=>{playing=!playing;pb.textContent=playing?'❚❚':'▶'};
+// camera
+const ex=(E1[0]+E2[0])/2,ey=(E1[1]+E2[1])/2;ctl.target.set(ex*0.6+cx0*0.4,0,-(ey*0.6+cy0*0.4));cam.position.set(ctl.target.x+span*.42,span*.5,ctl.target.z+span*.55);ctl.update();
+let f=0;
+(function loop(){
+ if(playing){minute+=0.25;if(minute>=1380)minute=360;tR.value=minute}
+ step(ag,scen,minute,0.25,liveAcc);for(let i=0;i<liveAcc.length;i++)liveAcc[i]*=0.985;
+ for(let i=0;i<N;i++){const a=ag[i];if(!a.on||!a.e){ppos[i*3+1]=-50;continue}const A=nodes[a.from],B=nodes[a.to],t=Math.min(1,a.p);let x=A.x+(B.x-A.x)*t,y=A.y+(B.y-A.y)*t;const L=a.len||1;x+=-(B.y-A.y)/L*a.jit;y+=(B.x-A.x)/L*a.jit;ppos[i*3]=x;ppos[i*3+1]=1.5;ppos[i*3+2]=-y}
+ pg.attributes.position.needsUpdate=true;
+ evLine.material.opacity=evOn(scen,minute)?.35:0;pin.position.y=22+Math.sin(f/20)*2;
+ if(f%4===0)paintRoads();
+ if(f%10===0){const m=Math.floor(minute);document.getElementById('clock').textContent='Sat '+fmt(minute);document.getElementById('kNow').textContent=onBlock(ag);
+  const e=RUN.event.curve[m],n=RUN.normal.curve[m]||1;document.getElementById('kLift').textContent=scen==='event'?((e/n-1)>=0?'+':'')+Math.round((e/n-1)*100)+'%':'baseline';chart()}
+ f++;ctl.update();R.render(scene,cam);requestAnimationFrame(loop)})();
+</script></body></html>
